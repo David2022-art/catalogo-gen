@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ token }}">
+<title>Generador de Catálogos</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#F0EDE8; --surface:#FAFAF8; --ink:#1C1917;
+  --ink2:#78716C; --border:#DDD9D3; --accent:#E84D1C; --r:14px;
+}
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; }
+
+.header { background:var(--ink); height:60px; padding:0 40px; display:flex; align-items:center; justify-content:space-between; }
+.logo { font-family:'Syne',sans-serif; font-size:20px; color:#fff; }
+.logo span { color:var(--accent); }
+.badge { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.35); border:1px solid rgba(255,255,255,0.12); padding:5px 14px; border-radius:50px; }
+
+/* PAGES */
+.page { display:none; }
+.page.active { display:block; }
+.page-center { display:none; min-height:calc(100vh - 60px); flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; text-align:center; gap:20px; }
+.page-center.active { display:flex; }
+
+/* FORM */
+#pg-form { max-width:860px; margin:0 auto; padding:40px 20px 80px; }
+
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:28px; margin-bottom:18px; }
+.sh { display:flex; align-items:flex-start; gap:12px; margin-bottom:20px; }
+.sn { width:28px; height:28px; border-radius:50%; background:var(--ink); color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; margin-top:2px; }
+.sh-text h2 { font-family:'Syne',sans-serif; font-size:16px; }
+.sh-text p { font-size:12px; color:var(--ink2); margin-top:2px; }
+
+/* DROP ZONE */
+.dz { border:2px dashed var(--border); border-radius:12px; padding:40px 20px; text-align:center; cursor:pointer; background:var(--bg); position:relative; transition:all 0.2s; }
+.dz:hover, .dz.over { border-color:var(--accent); background:rgba(232,77,28,0.03); }
+.dz.filled { border-style:solid; border-color:var(--accent); }
+.dz input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.dz-icon { font-size:40px; display:block; margin-bottom:10px; }
+.dz h3 { font-family:'Syne',sans-serif; font-size:16px; margin-bottom:6px; }
+.dz p { font-size:13px; color:var(--ink2); }
+.fmts { display:flex; gap:6px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+.fmt { background:#eee; padding:2px 9px; border-radius:50px; font-size:10px; font-weight:700; color:var(--ink2); }
+
+/* FOLDER BADGE */
+.fbadge { display:none; align-items:center; gap:12px; background:var(--ink); color:#fff; border-radius:10px; padding:14px 16px; margin-top:14px; }
+.fbadge.show { display:flex; }
+.fb-icon { font-size:26px; }
+.fb-info { flex:1; }
+.fb-name { font-family:'Syne',sans-serif; font-size:14px; }
+.fb-count { font-size:12px; color:rgba(255,255,255,0.45); margin-top:2px; }
+.fb-clear { background:rgba(255,255,255,0.1); border:none; color:rgba(255,255,255,0.5); width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; transition:background 0.2s; }
+.fb-clear:hover { background:rgba(232,77,28,0.5); color:#fff; }
+
+.thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:8px; margin-top:12px; max-height:220px; overflow-y:auto; }
+.thumb { aspect-ratio:1/1; border-radius:8px; overflow:hidden; border:1.5px solid var(--border); position:relative; }
+.thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+
+/* FIELDS */
+.fields { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+@media(max-width:560px){.fields{grid-template-columns:1fr;}}
+.field { display:flex; flex-direction:column; gap:5px; }
+.field.full { grid-column:1/-1; }
+.field label { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--ink2); }
+.field input { padding:10px 14px; border:1.5px solid var(--border); border-radius:9px; font-family:'DM Sans',sans-serif; font-size:14px; color:var(--ink); background:var(--bg); outline:none; transition:border-color 0.15s; }
+.field input:focus { border-color:var(--accent); background:#fff; }
+
+/* OPTION CARDS */
+.opts { display:grid; gap:12px; }
+.opts.c3 { grid-template-columns:repeat(3,1fr); }
+@media(max-width:480px){.opts.c3{grid-template-columns:1fr 1fr;}}
+.opt { border:2px solid var(--border); border-radius:12px; padding:14px 12px; cursor:pointer; user-select:none; position:relative; background:var(--surface); transition:all 0.15s; }
+.opt:hover { border-color:var(--ink2); transform:translateY(-1px); }
+.opt.sel { border-color:var(--accent) !important; background:rgba(232,77,28,0.04); }
+.opt-check { position:absolute; top:10px; right:10px; width:20px; height:20px; border-radius:50%; background:#eee; border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:10px; color:transparent; transition:all 0.15s; }
+.opt.sel .opt-check { background:var(--accent); border-color:var(--accent); color:#fff; }
+.style-bar { height:40px; border-radius:8px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; letter-spacing:2px; }
+.sb-dark { background:#111; color:rgba(255,215,0,0.8); }
+.sb-light { background:linear-gradient(135deg,#fff5f9,#f0f4ff); color:#6C63FF; border:1px solid #dde; }
+.sb-minimal { background:#fff; color:#333; border:1px solid #eee; }
+.opt-title { font-family:'Syne',sans-serif; font-size:13px; margin-bottom:2px; }
+.opt-desc { font-size:11px; color:var(--ink2); }
+.opt-icon { font-size:28px; display:block; margin-bottom:8px; }
+
+/* BUTTON */
+.btn-gen { width:100%; padding:16px; background:var(--ink); color:#fff; border:none; border-radius:12px; font-family:'Syne',sans-serif; font-size:17px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:background 0.2s,transform 0.15s; }
+.btn-gen:hover { background:var(--accent); transform:translateY(-1px); }
+
+/* PROGRESS */
+.loader { width:52px; height:52px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg);} }
+.prog-title { font-family:'Syne',sans-serif; font-size:22px; }
+.prog-sub { font-size:14px; color:var(--ink2); }
+.prog-wrap { width:280px; height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+.prog-fill { height:100%; background:var(--accent); width:0; transition:width 0.3s; border-radius:3px; }
+
+/* SUCCESS / ERROR */
+.suc-icon { font-size:68px; }
+.suc-title { font-family:'Syne',sans-serif; font-size:28px; }
+.suc-sub { font-size:14px; color:var(--ink2); max-width:380px; line-height:1.7; }
+.btn-dl { display:inline-flex; align-items:center; gap:10px; background:var(--accent); color:#fff; padding:14px 32px; border-radius:10px; font-family:'Syne',sans-serif; font-size:16px; font-weight:700; text-decoration:none; box-shadow:0 4px 20px rgba(232,77,28,0.25); transition:transform 0.15s; cursor:pointer; border:none; }
+.btn-dl:hover { transform:translateY(-2px); }
+.btn-restart { background:none; border:1.5px solid var(--border); color:var(--ink2); padding:10px 24px; border-radius:8px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.15s; }
+.btn-restart:hover { border-color:var(--ink); color:var(--ink); }
+.err-box { background:#fff0ee; border:1px solid #fcc; border-radius:10px; padding:16px 20px; max-width:400px; width:100%; font-size:14px; color:#c00; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">Catálogo<span>.</span>gen</div>
+  <span class="badge">PDF · Sin registro</span>
+</div>
+
+<!-- FORM -->
+<div class="page active" id="pg-form">
+
+  <div class="card">
+    <div class="sh"><div class="sn">1</div><div class="sh-text"><h2>Sube tus imágenes</h2><p>Arrastra una carpeta o selecciona varias fotos</p></div></div>
+    <div class="dz" id="dz">
+      <input type="file" id="file-input" multiple accept="image/*" webkitdirectory>
+      <span class="dz-icon">📁</span>
+      <h3>Arrastra tu carpeta aquí</h3>
+      <p>o haz clic para explorar</p>
+      <div class="fmts"><span class="fmt">JPG</span><span class="fmt">PNG</span><span class="fmt">WEBP</span><span class="fmt">HEIC</span></div>
+    </div>
+    <div class="fbadge" id="fbadge">
+      <span class="fb-icon">📂</span>
+      <div class="fb-info">
+        <div class="fb-name" id="fb-name">—</div>
+        <div class="fb-count" id="fb-count">0 imágenes</div>
+      </div>
+      <button class="fb-clear" id="fb-clear" type="button">✕</button>
+    </div>
+    <div class="thumbs" id="thumbs"></div>
+  </div>
+
+  <div class="card">
+    <div class="sh"><div class="sn">2</div><div class="sh-text"><h2>Información</h2><p>Aparece en la portada</p></div></div>
+    <div class="fields">
+      <div class="field"><label>Nombre del catálogo</label><input id="f-title" type="text" placeholder="Ej: Pijamas 2026"></div>
+      <div class="field"><label>Subtítulo</label><input id="f-sub" type="text" placeholder="Ej: Colección nueva"></div>
+      <div class="field"><label>Negocio</label><input id="f-biz" type="text" placeholder="Ej: Tienda Sofía"></div>
+      <div class="field"><label>Precio por defecto</label><input id="f-price" type="text" placeholder="Ej: $85.000"></div>
+      <div class="field full"><label>WhatsApp / Contacto</label><input id="f-contact" type="text" placeholder="Ej: 300 123 4567"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sh"><div class="sn">3</div><div class="sh-text"><h2>Estilo visual</h2><p>Diseño del catálogo</p></div></div>
+    <div class="opts c2" id="style-opts">
+      <div class="opt sel" data-v="oscuro"><div class="opt-check">✓</div><div class="style-bar sb-dark">OSCURO</div><div class="opt-title">🖤 Oscuro</div><div class="opt-desc">Elegante. Ideal para tenis y deportivos</div></div>
+      <div class="opt" data-v="claro"><div class="opt-check">✓</div><div class="style-bar sb-light">CLARO</div><div class="opt-title">🤍 Claro</div><div class="opt-desc">Limpio y moderno. Ideal para pijamas y ropa</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sh"><div class="sn">4</div><div class="sh-text"><h2>Imágenes por página</h2><p>¿Cuántas por página?</p></div></div>
+    <div class="opts c3" id="layout-opts">
+      <div class="opt sel" data-v="1"><div class="opt-check">✓</div><span class="opt-icon">🖼️</span><div class="opt-title">1 por página</div><div class="opt-desc">Grande y detallado</div></div>
+      <div class="opt" data-v="2"><div class="opt-check">✓</div><span class="opt-icon">⬛⬛</span><div class="opt-title">2 por página</div><div class="opt-desc">Equilibrado</div></div>
+      <div class="opt" data-v="4"><div class="opt-check">✓</div><span class="opt-icon">⊞</span><div class="opt-title">4 por página</div><div class="opt-desc">Compacto</div></div>
+    </div>
+  </div>
+
+  <button class="btn-gen" id="btn-gen" type="button">✨ Generar Catálogo PDF</button>
+</div>
+
+<!-- PROGRESS -->
+<div class="page-center" id="pg-prog">
+  <div class="loader"></div>
+  <p class="prog-title">Generando tu catálogo...</p>
+  <p class="prog-sub" id="prog-sub">Subiendo imágenes...</p>
+  <div class="prog-wrap"><div class="prog-fill" id="prog-fill"></div></div>
+</div>
+
+<!-- SUCCESS -->
+<div class="page-center" id="pg-ok">
+  <div class="suc-icon">🎉</div>
+  <h2 class="suc-title">¡PDF listo!</h2>
+  <p class="suc-sub">Tu catálogo fue generado y descargado directamente como PDF.</p>
+  <button class="btn-dl" id="btn-dl-again">⬇️ Descargar de nuevo</button>
+  <button class="btn-restart" id="btn-restart">← Crear otro catálogo</button>
+</div>
+
+<!-- ERROR -->
+<div class="page-center" id="pg-err">
+  <div class="suc-icon">😓</div>
+  <h2 class="suc-title">Ocurrió un error</h2>
+  <div class="err-box" id="err-msg">Error desconocido</div>
+  <button class="btn-restart" id="btn-err-back">← Volver</button>
+</div>
+
+<script>
+var state = { files: [], folderName: '', style: 'oscuro', layout: '1', lastBlob: null };
+
+function show(id) {
+  document.querySelectorAll('.page, .page-center').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
+/* FILES */
+var fi = document.getElementById('file-input');
+fi.addEventListener('change', function() {
+  var arr = [].filter.call(this.files, function(f){ return f.type.startsWith('image/'); });
+  if (!arr.length) return;
+  var folder = arr[0].webkitRelativePath ? arr[0].webkitRelativePath.split('/')[0] : 'Mis imágenes';
+  state.files = arr;
+  state.folderName = folder;
+  renderFiles();
+});
+
+var dz = document.getElementById('dz');
+dz.addEventListener('dragover', function(e){ e.preventDefault(); this.classList.add('over'); });
+dz.addEventListener('dragleave', function(){ this.classList.remove('over'); });
+dz.addEventListener('drop', function(e){
+  e.preventDefault(); this.classList.remove('over');
+  var arr = [].filter.call(e.dataTransfer.files, function(f){ return f.type.startsWith('image/'); });
+  if (arr.length){ state.files = arr; state.folderName = 'Carpeta'; renderFiles(); }
+});
+
+document.getElementById('fb-clear').addEventListener('click', function(){
+  state.files = []; state.folderName = ''; fi.value = ''; renderFiles();
+});
+
+function renderFiles() {
+  var badge = document.getElementById('fbadge');
+  var thumbs = document.getElementById('thumbs');
+  thumbs.innerHTML = '';
+  if (!state.files.length) { badge.classList.remove('show'); dz.classList.remove('filled'); return; }
+  dz.classList.add('filled');
+  badge.classList.add('show');
+  document.getElementById('fb-name').textContent = state.folderName || 'Mis imágenes';
+  var n = state.files.length;
+  document.getElementById('fb-count').textContent = n + ' imagen' + (n!==1?'es':'') + ' seleccionada' + (n!==1?'s':'');
+  state.files.forEach(function(f){
+    var div = document.createElement('div'); div.className = 'thumb';
+    var img = document.createElement('img'); img.src = URL.createObjectURL(f); img.loading = 'lazy';
+    div.appendChild(img); thumbs.appendChild(div);
+  });
+}
+
+/* SELECTORS */
+document.getElementById('style-opts').addEventListener('click', function(e){
+  var c = e.target.closest('.opt'); if(!c) return;
+  this.querySelectorAll('.opt').forEach(function(x){x.classList.remove('sel');});
+  c.classList.add('sel'); state.style = c.dataset.v;
+});
+document.getElementById('layout-opts').addEventListener('click', function(e){
+  var c = e.target.closest('.opt'); if(!c) return;
+  this.querySelectorAll('.opt').forEach(function(x){x.classList.remove('sel');});
+  c.classList.add('sel'); state.layout = c.dataset.v;
+});
+
+/* GENERATE */
+document.getElementById('btn-gen').addEventListener('click', function(){
+  if (!state.files.length){ alert('⚠️ Sube al menos una imagen primero'); return; }
+  show('pg-prog');
+  var sub = document.getElementById('prog-sub');
+  var fill = document.getElementById('prog-fill');
+  sub.textContent = 'Subiendo imágenes...';
+  fill.style.width = '10%';
+
+  var fd = new FormData();
+  fd.append('title',    document.getElementById('f-title').value.trim() || state.folderName || 'Mi Catálogo');
+  fd.append('subtitle', document.getElementById('f-sub').value.trim());
+  fd.append('business', document.getElementById('f-biz').value.trim());
+  fd.append('price',    document.getElementById('f-price').value.trim());
+  fd.append('contact',  document.getElementById('f-contact').value.trim());
+  fd.append('style',    state.style);
+  fd.append('layout',   state.layout);
+  fd.append('token',    document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+  state.files.forEach(function(f){ fd.append('images', f, f.name); });
+
+  fill.style.width = '30%';
+  sub.textContent = 'Procesando en el servidor...';
+
+  fetch('/generate', { method:'POST', body:fd })
+    .then(function(res){
+      fill.style.width = '90%';
+      if (!res.ok) {
+        return res.json().then(function(j){ throw new Error(j.error || 'Error del servidor'); });
+      }
+      return res.blob();
+    })
+    .then(function(blob){
+      fill.style.width = '100%';
+      state.lastBlob = blob;
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      var t = document.getElementById('f-title').value.trim() || state.folderName || 'catalogo';
+      a.download = t.replace(/[^a-zA-Z0-9_\- ]/g,'').trim().replace(/\s+/g,'_') + '.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ show('pg-ok'); }, 400);
+    })
+    .catch(function(err){
+      document.getElementById('err-msg').textContent = err.message;
+      show('pg-err');
+    });
+});
+
+/* DOWNLOAD AGAIN */
+document.getElementById('btn-dl-again').addEventListener('click', function(){
+  if (!state.lastBlob) return;
+  var url = URL.createObjectURL(state.lastBlob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'catalogo.pdf';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+});
+
+/* RESTART */
+function resetApp(){
+  state.files = []; state.folderName = ''; state.lastBlob = null;
+  fi.value = ''; renderFiles();
+  document.querySelectorAll('#style-opts .opt').forEach(function(c){c.classList.remove('sel');});
+  document.querySelector('#style-opts .opt[data-v="oscuro"]').classList.add('sel');
+  document.querySelectorAll('#layout-opts .opt').forEach(function(c){c.classList.remove('sel');});
+  document.querySelector('#layout-opts .opt[data-v="1"]').classList.add('sel');
+  state.style='oscuro'; state.layout='1';
+  show('pg-form');
+}
+document.getElementById('btn-restart').addEventListener('click', resetApp);
+document.getElementById('btn-err-back').addEventListener('click', resetApp);
+</script>
+</body>
+</html>

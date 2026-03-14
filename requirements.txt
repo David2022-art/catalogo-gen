@@ -1,0 +1,5 @@
+# Generador de Catálogos — dependencias
+# Python 3.8 o superior requerido
+flask>=2.3.0
+Pillow>=10.0.0
+reportlab>=4.0.0
