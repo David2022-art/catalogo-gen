@@ -118,7 +118,8 @@ def generar_catalogo():
 
     except Exception as e:
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        # Retorna un error JSON con un mensaje al usuario y un código de estado 500
+        return jsonify({'error': 'Ocurrió un error inesperado al generar el catálogo. Por favor, intenta de nuevo.'}), 500
 
 if __name__ == '__main__':
     print(f"\n  Servidor en http://localhost:{config.PUERTO}\n")

@@ -284,6 +284,9 @@ document.getElementById('btn-gen').addEventListener('click', function(){
     .then(function(res){
       fill.style.width = '90%';
       if (!res.ok) {
+        if (res.status === 429) {
+          throw new Error('⏳ Has alcanzado el límite de velocidad. Por favor, espera un minuto e intenta de nuevo.');
+        }
         return res.json().then(function(j){ throw new Error(j.error || 'Error del servidor'); });
       }
       return res.blob();
