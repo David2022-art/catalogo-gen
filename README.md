@@ -27,6 +27,8 @@ bash run.sh
 ### Windows
 Doble clic en `run.bat`  
 *(o desde la terminal: `run.bat`)*
+Si falla la instalacion "WinError 5 - Acceso denegado" se debe de iniciar como administrador 
+o mover el archivo de descargas a documentos 
 
 ### Mac
 ```bash
