@@ -168,14 +168,34 @@ def dibujar_portada(canvas, ancho, alto, titulo, subtitulo, negocio, contacto, t
     color_relleno(canvas, '#bbbbbb')
     canvas.drawCentredString(ancho / 2, y_etiqueta + 6, etiqueta)
 
-    # Título principal
+    
+    # Título principal — con salto de línea automático
     color_relleno(canvas, '#ffffff')
     tamano_titulo = 58
-    canvas.setFont('Helvetica-Bold', tamano_titulo)
-    while canvas.stringWidth(titulo.upper(), 'Helvetica-Bold', tamano_titulo) > ancho - 80 and tamano_titulo > 16:
-        tamano_titulo -= 2
-    canvas.drawCentredString(ancho / 2, alto * 0.555, titulo.upper())
+    palabras = titulo.upper().split()
+    lineas = []
+    linea_actual = ''
 
+    for palabra in palabras:
+        prueba = (linea_actual + ' ' + palabra).strip()
+        canvas.setFont('Helvetica-Bold', tamano_titulo)
+        while canvas.stringWidth(prueba, 'Helvetica-Bold', tamano_titulo) > ancho - 80 and tamano_titulo > 16:
+            tamano_titulo -= 1
+        if canvas.stringWidth(prueba, 'Helvetica-Bold', tamano_titulo) <= ancho - 80:
+            linea_actual = prueba
+        else:
+            lineas.append(linea_actual)
+            linea_actual = palabra
+
+    if linea_actual:
+        lineas.append(linea_actual)
+
+    y_titulo = alto * 0.575
+    espacio_entre_lineas = tamano_titulo + 8
+    for linea in lineas:
+        canvas.setFont('Helvetica-Bold', tamano_titulo)
+        canvas.drawCentredString(ancho / 2, y_titulo, linea)
+        y_titulo -= espacio_entre_lineas
     # Subtítulo
     if subtitulo:
         canvas.setFont('Helvetica', 11)
