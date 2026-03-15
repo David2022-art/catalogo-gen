@@ -49,11 +49,11 @@ Se instalan automáticamente al ejecutar el script:
 
 ## ⚙️ Configuración
 
-Abre `app.py` y modifica las variables al inicio del archivo:
+Abre `config.py` y modifica las variables según tus necesidades:
 
 ```python
 PUERTO            = 7860   # puerto del servidor
-TAMAÑO_MAX_IMAGEN = 1800   # píxeles máximos por lado
+TAMANO_MAX_IMAGEN = 1800   # píxeles máximos por lado
 CALIDAD_IMAGEN    = 85     # calidad JPEG (1-100)
 MAX_SUBIDA_MB     = 500    # límite de subida en MB
 ```
@@ -83,7 +83,9 @@ TEMAS = {
 
 ```
 catalogapp/
-├── app.py              # Servidor Flask + generación de PDF
+├── app.py              # Servidor Flask y rutas
+├── config.py           # Configuración (puerto, temas, seguridad)
+├── pdf_engine.py       # Motor de generación de PDF y procesamiento de imágenes
 ├── run.sh              # Script de arranque Linux
 ├── run.bat             # Script de arranque Windows
 ├── run_mac.sh          # Script de arranque Mac

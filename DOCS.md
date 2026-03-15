@@ -50,7 +50,9 @@ Las imágenes nunca salen del computador del usuario.
 ```
 catalogo-gen/
 │
-├── app.py                  # Backend principal (Flask + PDF)
+├── app.py                  # Servidor Flask y rutas
+├── config.py               # Configuración y temas de color
+├── pdf_engine.py           # Lógica de generación de PDF y Pillow
 ├── requirements.txt        # Dependencias Python
 │
 ├── templates/
@@ -120,7 +122,7 @@ El PDF se envía al navegador como descarga
 
 ## 4. Configuración
 
-Todas las variables de configuración están al inicio de `app.py`
+Todas las variables de configuración están en `config.py`
 y tienen comentarios explicativos:
 
 ```python
@@ -160,7 +162,7 @@ VENTANA_SEGUNDOS = 60
 
 ## 5. Temas de color
 
-Los temas se definen en el diccionario `TEMAS` en `app.py`.
+Los temas se definen en el diccionario `TEMAS` en `config.py`.
 Cada clave es un color en formato hexadecimal `#rrggbb`.
 
 ```python
@@ -342,6 +344,7 @@ Content-Type: multipart/form-data
 | `contact` | string | ❌ | Teléfono o contacto |
 | `style` | string | ❌ | `oscuro` o `claro` (default: `oscuro`) |
 | `layout` | int | ❌ | `1`, `2` o `4` (default: `1`) |
+| `individual_prices` | string[] | ❌ | Lista de precios específicos para cada imagen |
 
 **Respuestas:**
 
@@ -468,7 +471,10 @@ Usuario hace clic en "Generar"
 
 ---
 
-## 11. Cómo agregar un nuevo tema
+## 11. Personalización de Temas (Ejemplo)
+
+> [!NOTE]
+> Los siguientes pasos son un ejemplo de cómo podrías extender el sistema.
 
 1. Abre `app.py`
 2. Agrega una nueva entrada al diccionario `TEMAS`:
@@ -508,7 +514,10 @@ TEMAS = {
 
 ---
 
-## 12. Cómo agregar un nuevo layout
+## 12. Personalización de Layouts (Ejemplo)
+
+> [!NOTE]
+> Los siguientes pasos muestran la lógica interna necesaria para soportar nuevos formatos.
 
 1. En `app.py`, en la función `generar_catalogo()`, agrega el nuevo caso:
 
